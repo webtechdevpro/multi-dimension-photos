@@ -14,9 +14,11 @@ class Webtechdevpro_Post_Types {
 	}
 
 	public function wp_admin_scripts() {
-		wp_enqueue_script('media-upload');
-		wp_enqueue_script('thickbox');
-		wp_enqueue_style('thickbox');
+		//wp_enqueue_script('media-upload');
+		//wp_enqueue_script('thickbox');
+		//wp_enqueue_style('thickbox');
+		wp_enqueue_script('jquery');
+		wp_enqueue_media();
 	}
 
 	public function init() {
@@ -68,7 +70,12 @@ class Webtechdevpro_Post_Types {
 
 	public function getSizes() {
 
-		return ['200x200', '300x300', '400x300', '500x300'];
+		global $photo_sizes;
+
+		if(empty($photo_sizes))
+			return [];
+
+		return $photo_sizes;
 	}
 
 	public function getPostMeta() {
@@ -86,18 +93,23 @@ class Webtechdevpro_Post_Types {
 	        return;
 	    }
 
-	    if(isset($_POST['post_type']) && $_POST['post_type'] == self::POST_TYPE && current_user_can('edit_post', $post_id))
+	    if(isset($_POST['post_type']) && $_POST['post_type'] == self::POST_TYPE && current_user_can('edit_post', $post_id) && is_numeric($_POST['webtechdevpro_image_id']))
 	    {
 	    	$sizes = $this->getSizes();
 
-	        foreach($sizes as $field)
-	        {
-	        	
-	        	if(!in_array($field, $_POST[self::POST_TYPE]))    
-	        		delete_post_meta($post_id, self::POST_TYPE.'_'.$field);
-				else
-	            	update_post_meta($post_id, self::POST_TYPE.'_'.$field, $field);
-	        }
+	    	foreach ($sizes as $type => $item_sizes) { 
+		        foreach($item_sizes as $field)
+		        {
+		        	//echo $field;
+		        	//print_r($_POST[self::POST_TYPE]); exit;
+		        	if(!in_array($field, array_keys($_POST[self::POST_TYPE])))    
+		        		delete_post_meta($post_id, self::POST_TYPE.'_'.$field);
+					else
+		            	update_post_meta($post_id, self::POST_TYPE.'_'.$field, $type);
+		        }
+	    	}
+
+	        update_post_meta($post_id, 'webtechdevpro_image_id', $_POST['webtechdevpro_image_id']);
 	    }
 	}
 
@@ -106,25 +118,33 @@ class Webtechdevpro_Post_Types {
 
 <script>
 jQuery(function() {
-	var webtechdevpro_upload = false;
-	jQuery('input[name="webtechdevpro_upload"]').click(function() {
+	
+	jQuery('input[name="webtechdevpro_upload"]').click(function(e) {
 		
-		webtechdevpro_upload = true;
-		tb_show('', 'media-upload.php?type=image&amp;TB_iframe=true');
-		return false;
+		e.preventDefault();
+        var image = wp.media({ 
+            title: 'Upload Image',
+            multiple: false
+        }).open()
+        .on('select', function(e){
+            var uploaded_image = image.state().get('selection').first();
+            jQuery('input[name="webtechdevpro_image_id"]').val(uploaded_image.id);
+            jQuery('#webtechdevpro_image_url').attr('src', uploaded_image.toJSON().url);
+        });
 	});
 
-	window.original_send_to_editor = window.send_to_editor;
-	window.send_to_editor = function(html){
-		if (webtechdevpro_upload) {
-			fileurl = jQuery('img',html).attr('src');
-			console.log(fileurl);
-			webtechdevpro_upload = false;
-			tb_remove();
-		} else {
-			window.original_send_to_editor(html);
+	jQuery('#post').click(function(e){
+		
+		$('#webtechdevpro_error').remove();
+
+		if(!jQuery('input[name="webtechdevpro_image_id"]').val()) {
+
+			jQuery('#webtechdevpro_image_url').after('<span style="color:red;" id="webtechdevpro_error">Please upload image</span>');
+			return false;
 		}
-	}
+
+		return false;
+	});
 });
 </script>
 
