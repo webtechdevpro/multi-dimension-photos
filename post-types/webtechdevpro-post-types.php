@@ -1,5 +1,7 @@
 <?php
 
+require_once dirname(__FILE__).'/../resize-image.php';
+
 class Webtechdevpro_Post_Types {
 
 	const POST_TYPE = "webtechdevpro_photos";
@@ -110,7 +112,27 @@ class Webtechdevpro_Post_Types {
 	    	}
 
 	        update_post_meta($post_id, 'webtechdevpro_image_id', $_POST['webtechdevpro_image_id']);
+
+	        $image_meta = wp_get_attachment_metadata($_POST['webtechdevpro_image_id']);
+	        $this->resizeImage(array_keys($_POST[self::POST_TYPE]), $image_meta['file']);
 	    }
+	}
+
+	private function resizeImage($data, $image) {
+
+		$destination = dirname(__FILE__).'/../images/';
+		$upload_dir = wp_upload_dir();
+		$source = $upload_dir['basedir'].'/';
+
+		foreach($data as $dimension) {
+
+			list($w, $h) = explode('x', $dimension);
+
+			//echo $source.$image; exit;
+			$resizeObj = new resize($source.$image);
+			$resizeObj -> resizeImage($w, $h, 'crop');
+			$resizeObj -> saveImage($destination.$dimension.'-'. basename($image), 100);
+		}
 	}
 
 	public function admin_script() {
