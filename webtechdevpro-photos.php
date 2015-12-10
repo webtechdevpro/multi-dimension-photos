@@ -15,6 +15,7 @@ class Webtechdevpro_Photos {
 	public function __construct() {
 
 		$webtechdevpro_post_types = new Webtechdevpro_Post_Types();
+		add_shortcode( 'webtechdevpro_photos', array($webtechdevpro_post_types, 'getImages') );
 	}
 
 	public static function activate() {

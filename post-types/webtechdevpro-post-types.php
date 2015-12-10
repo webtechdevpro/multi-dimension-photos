@@ -135,6 +135,40 @@ class Webtechdevpro_Post_Types {
 		}
 	}
 
+	public function getImages($atts, $content = NULL) {
+
+		if(empty($atts['post_id']) || !is_numeric($atts['post_id']))
+			return;
+
+		global $photo_sizes, $wpdb;
+		$id = $atts['post_id'];
+
+		$sort_order = array_keys($photo_sizes);
+
+		$images = [];
+
+		$attachment_id = get_post_meta($id, 'webtechdevpro_image_id', true);
+		$image_meta = wp_get_attachment_metadata($attachment_id);
+
+		foreach ($sort_order as $val) {
+
+			$results = $wpdb->get_results( 
+								"
+								SELECT REPLACE(meta_key, '". self::POST_TYPE ."_', '') as size, 
+								CONCAT(REPLACE(meta_key, '". self::POST_TYPE ."_', ''), '-". basename($image_meta['file']) ."') as picture
+								FROM $wpdb->postmeta
+								WHERE meta_key LIKE '". self::POST_TYPE ."%'
+								AND post_id = $id
+								AND meta_value = '$val'
+								"
+							);
+			if($results)
+				$images[$val] = $results;
+		}
+
+		include(sprintf("%s/../templates/%s-view.php", dirname(__FILE__), str_replace('_', '-', self::POST_TYPE)));         
+	}
+
 	public function admin_script() {
 ?>
 

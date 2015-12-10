@@ -1,7 +1,6 @@
 <?php
 	$sizes = $this->getSizes();
 	$data = $this->getPostMeta();
-
 ?>
 
 <table style="width: 100%;">
